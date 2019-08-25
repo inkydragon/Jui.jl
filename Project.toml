@@ -3,6 +3,10 @@ uuid = "20762a7c-df53-507c-9e7c-4a85d600563a"
 authors = ["woclass"]
 version = "0.1.0"
 
+[deps]
+CImGui = "5d785b6c-b76f-510e-a07c-3070796c7e87"
+MLStyle = "d8e11817-5142-5d16-987a-aa16d5891078"
+
 [compat]
 julia = "1.4"
 

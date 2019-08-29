@@ -11,8 +11,7 @@ using CImGui: ImVec2, ImVec4, IM_COL32, ImU32
 using CImGui.CSyntax.CFor
 
 include("LSystem.jl")
-using .LSystem: RULES, genStep
-
+using .LSystem: RULES, genStep, getAllRules
 
 @static if Sys.isapple()
     # OpenGL 3.2 + GLSL 150
@@ -40,22 +39,16 @@ GLFW.SwapInterval(1)  # enable vsync
 
 # setup Dear ImGui context
 ctx = CImGui.CreateContext()
-
 # setup Dear ImGui style
 CImGui.StyleColorsDark()
-# CImGui.StyleColorsClassic()
-# CImGui.StyleColorsLight()
 
 # setup Platform/Renderer bindings
 ImGui_ImplGlfw_InitForOpenGL(window, true)
 ImGui_ImplOpenGL3_Init(glsl_version)
 
-clear_color = Cfloat[0.45, 0.55, 0.60, 1.00]
-while !GLFW.WindowShouldClose(window)
-    # oh my global scope
-    # TODO: remove all global variables
-    global clear_color
+rule_list = getAllRules()
 
+while !GLFW.WindowShouldClose(window)
 
     GLFW.PollEvents()
     # start the Dear ImGui frame
@@ -67,17 +60,29 @@ while !GLFW.WindowShouldClose(window)
     CImGui.SetNextWindowSize((350, 560), CImGui.ImGuiCond_FirstUseEver)
     CImGui.Begin("Example: Custom rendering")
     draw_list = CImGui.GetWindowDrawList()
-
-    # primitives
-    CImGui.Text("Primitives")
-    thickness, col = @cstatic thickness=Cfloat(4.0)  col=Cfloat[1.0,1.0,0.4,1.0] begin
-        @c CImGui.DragFloat("Thickness", &thickness, 0.05, 1.0, 8.0, "%.02f")
+    
+    CImGui.Text("L-Systems")
+    listbox_item_current, listbox_items = @cstatic listbox_item_current=Cint(0) listbox_items=rule_list begin
+        # list box
+        @c CImGui.ListBox("L-Systems\n(click to select one)", &listbox_item_current, listbox_items, length(listbox_items), 3)
+    end
+    CImGui.Text("L-System parameters")
+    iter, angle, slen = @cstatic iter=Cint(4) angle=Cfloat(0.0) slen=Cfloat(10) begin 
+        @c CImGui.CImGui.SliderInt("Iteration times", &iter, 1, 6, "%d")
+        @c CImGui.DragFloat("Initial angle", &angle, 1, -180.0, 180.0, "%.0f")
+        @c CImGui.DragFloat("Step length",  &slen, 0.5, 0.5, 30, "%.0f")
+    end
+    CImGui.Separator()
+    
+    CImGui.Text("Lines")
+    thickness, col = @cstatic thickness=Cfloat(2.0)  col=Cfloat[1.0,1.0,0.4,1.0] begin
+        @c CImGui.DragFloat("Width", &thickness, 0.05, 1.0, 8.0, "%.02f")
         CImGui.ColorEdit4("Color", col)
     end
     CImGui.Text("Adjust Original Point")
-    dx, dy = @cstatic dx=Cfloat(0.0) dy=Cfloat(0.0) begin 
+    dx, dy = @cstatic dx=Cfloat(256.0) dy=Cfloat(128.0) begin 
         @c CImGui.DragFloat("dx ->", &dx, 4, 0.0, 512.0, "%.0f")
-        @c CImGui.DragFloat("dy V", &dy, 4, 0.0, 512.0, "%.0f")
+        @c CImGui.DragFloat("dy V",  &dy, 4, 0.0, 512.0, "%.0f")
     end
     CImGui.Separator()
 
@@ -88,13 +93,19 @@ while !GLFW.WindowShouldClose(window)
         x::Cfloat = p.x + 4.0 + dx
         y::Cfloat = p.y + 4.0 + dy
         th::Cfloat = thickness
+        param = Dict(
+            "iter" => iter,
+            "direct" => angle,
+            "start point" => (x,y),
+            "step length" => slen,
+        )
 
         # L System
-        steps = genStep(RULES[6])
+        steps = genStep(RULES[listbox_item_current+1], param)
         for ((sx, sy), (ex, ey)) in steps
             CImGui.AddLine(draw_list,
-                ImVec2(x+sx, y+sy),
-                ImVec2(x+ex, y+ey),
+                ImVec2(sx, sy),
+                ImVec2(ex, ey),
                 col32,
                 th
             );
@@ -109,7 +120,6 @@ while !GLFW.WindowShouldClose(window)
     GLFW.MakeContextCurrent(window)
     display_w, display_h = GLFW.GetFramebufferSize(window)
     glViewport(0, 0, display_w, display_h)
-    glClearColor(clear_color...)
     glClear(GL_COLOR_BUFFER_BIT)
     ImGui_ImplOpenGL3_RenderDrawData(CImGui.GetDrawData())
 

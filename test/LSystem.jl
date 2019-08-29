@@ -65,11 +65,13 @@ function genStepString(rule::Rule) :: String
     start
 end
 
-function genStep(rule::Rule=DEFAULT_RULE)
+function genStep(rule::Rule=DEFAULT_RULE, param=Dict())
+    merge!(rule, param)
+    
     angle = rule["direct"]
-    Δθ = rule["angle"]
-    sp = (0, 0) # start point
-    l = 10 # step length
+    Δθ =    rule["angle"]
+    sp =    get(rule, "start point", (0, 0))
+    l =     get(rule, "step length", 10)
 
     steps = []
     stack = []
@@ -95,6 +97,10 @@ function genStep(rule::Rule=DEFAULT_RULE)
     end
 
     steps
+end
+
+function getAllRules(rules=RULES)
+    [d["title"] for d in rules]
 end
 
 end  # module LSystem

@@ -59,40 +59,40 @@ while !GLFW.WindowShouldClose(window)
     CImGui.SetNextWindowSize((350, 560), CImGui.ImGuiCond_FirstUseEver)
     CImGui.Begin("Example: Custom rendering")
     draw_list = CImGui.GetWindowDrawList()
-    
+
     CImGui.Text("L-Systems")
     listbox_item_current, listbox_items = @cstatic listbox_item_current=Cint(0) listbox_items=rule_list begin
         # list box
         @c CImGui.ListBox("L-Systems\n(click to select one)", &listbox_item_current, listbox_items, length(listbox_items), 5)
     end
     CImGui.Text("L-System parameters")
-    iter, angle, slen = @cstatic iter=Cint(4) angle=Cfloat(0.0) slen=Cfloat(10) begin 
+    iter, angle, slen = @cstatic iter=Cint(4) angle=Cfloat(0.0) slen=Cfloat(10) begin
         @c CImGui.CImGui.SliderInt("Iteration times", &iter, 1, 8, "%d")
         @c CImGui.DragFloat("Initial angle", &angle, 1, -180.0, 180.0, "%.0f")
         @c CImGui.DragFloat("Step length",  &slen, 0.5, 0.5, 30, "%.0f")
     end
     CImGui.Separator()
-    
+
     CImGui.Text("Lines")
     thickness, col = @cstatic thickness=Cfloat(2.0)  col=Cfloat[1.0,1.0,0.4,1.0] begin
         @c CImGui.DragFloat("Width", &thickness, 0.05, 1.0, 8.0, "%.02f")
         CImGui.ColorEdit4("Color", col)
-    end 
+    end
     CImGui.Text("Adjust Original Point")
-    dx, dy = @cstatic dx=Cfloat(256.0) dy=Cfloat(128.0) begin 
+    dx, dy = @cstatic dx=Cfloat(256.0) dy=Cfloat(128.0) begin
         @c CImGui.DragFloat("dx ->", &dx, 4, 0.0, 4096.0, "%.0f")
         @c CImGui.DragFloat("dy V",  &dy, 4, 0.0, 2048.0, "%.0f")
     end
     CImGui.Separator()
-    
+
     @cstatic currentChild = 0
     wpos = CImGui.GetWindowPos()
     backupPos = CImGui.GetCursorScreenPos()
-    
+
     # draw lines
     p = CImGui.GetCursorScreenPos()
     col32 = CImGui.ColorConvertFloat4ToU32(ImVec4(col...))
-    
+
     begin
         x::Cfloat = p.x + 4.0 + dx
         y::Cfloat = p.y + 4.0 + dy
@@ -106,48 +106,28 @@ while !GLFW.WindowShouldClose(window)
 
         # L System
         steps = genStep(RULES[listbox_item_current+1], param)
-        slen = length(steps)
-        if slen > (2^13 - 8)
-            times = Int(floor(slen/(2^13 - 8)))
-            idxm = (2^13 - 8)
-            for i in 0:(times-1)
+
+        CImGui.SetCursorScreenPos(backupPos)
+        CImGui.BeginChild(currentChild+=1)
+        draw_list = CImGui.GetWindowDrawList()
+        for ((sx, sy), (ex, ey)) in steps
+            CImGui.AddLine(draw_list,
+                ImVec2(sx, sy),
+                ImVec2(ex, ey),
+                col32,
+                th
+            );
+            if unsafe_load(draw_list)._VtxCurrentIdx > (2^16-2^10)
+                CImGui.EndChild()
+
                 CImGui.SetCursorScreenPos(backupPos)
                 CImGui.BeginChild(currentChild+=1)
                 draw_list = CImGui.GetWindowDrawList()
-                for ((sx, sy), (ex, ey)) in steps[(1+idxm*i):idxm*(1+i)]
-                    CImGui.AddLine(draw_list,
-                        ImVec2(sx, sy),
-                        ImVec2(ex, ey),
-                        col32,
-                        th
-                    );
-                end
-                CImGui.EndChild()
-            end
-            CImGui.SetCursorScreenPos(backupPos)
-            CImGui.BeginChild(currentChild+=1)
-            draw_list = CImGui.GetWindowDrawList()
-                for ((sx, sy), (ex, ey)) in steps[(1+idxm*times):end]
-                    CImGui.AddLine(draw_list,
-                        ImVec2(sx, sy),
-                        ImVec2(ex, ey),
-                        col32,
-                        th
-                    );
-                end
-            CImGui.EndChild()
-        else
-            for ((sx, sy), (ex, ey)) in steps
-                CImGui.AddLine(draw_list,
-                    ImVec2(sx, sy),
-                    ImVec2(ex, ey),
-                    col32,
-                    th
-                );
             end
         end
+        CImGui.EndChild()
     end
-    
+
     CImGui.End() #= widgets end ---------------------------------------------=#
 
     # rendering

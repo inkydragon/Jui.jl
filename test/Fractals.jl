@@ -13,6 +13,8 @@ using CImGui.CSyntax.CFor
 include("LSystem.jl")
 using .LSystem: RULES, genStep, getAllRules
 
+
+## GLFW_init head -----------
 @static if Sys.isapple()
     # OpenGL 3.2 + GLSL 150
     const glsl_version = 150
@@ -36,24 +38,30 @@ window = GLFW.CreateWindow(1280, 720, "Demo")
 @assert window != C_NULL
 GLFW.MakeContextCurrent(window)
 GLFW.SwapInterval(1)  # enable vsync
+## GLFW_init head -----------
 
 # setup Dear ImGui context
 ctx = CImGui.CreateContext()
-# setup Dear ImGui style
-CImGui.StyleColorsDark()
 
 # setup Platform/Renderer bindings
 ImGui_ImplGlfw_InitForOpenGL(window, true)
 ImGui_ImplOpenGL3_Init(glsl_version)
+## all init end
+
+# user's code
+
+# setup Dear ImGui style
+CImGui.StyleColorsDark()
 
 rule_list = getAllRules()
 
-while !GLFW.WindowShouldClose(window)
+while !GLFW.WindowShouldClose(window) ## Main Cycle
     GLFW.PollEvents()
     # start the Dear ImGui frame
     ImGui_ImplOpenGL3_NewFrame()
     ImGui_ImplGlfw_NewFrame()
     CImGui.NewFrame()
+    ## new frame begin
 
     #= Add widgets ---------------------------------------------------------- =#
     CImGui.SetNextWindowSize((350, 560), CImGui.ImGuiCond_FirstUseEver)
@@ -146,5 +154,4 @@ end
 ImGui_ImplOpenGL3_Shutdown()
 ImGui_ImplGlfw_Shutdown()
 CImGui.DestroyContext(ctx)
-
-GLFW.DestroyWindow(window)
+GLFW.DestroyWindow(window) # # GLFW_init tail

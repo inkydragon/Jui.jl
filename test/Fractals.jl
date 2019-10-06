@@ -6,7 +6,6 @@ using CImGui.OpenGLBackend
 using CImGui.GLFWBackend.GLFW
 using CImGui.OpenGLBackend.ModernGL
 using Printf
-
 using CImGui: ImVec2, ImVec4, IM_COL32, ImU32
 using CImGui.CSyntax.CFor
 
@@ -14,54 +13,53 @@ include("LSystem.jl")
 using .LSystem: RULES, genStep, getAllRules
 
 
-## GLFW_init head -----------
+##== init GLFW ==##
 @static if Sys.isapple()
     # OpenGL 3.2 + GLSL 150
-    const glsl_version = 150
+    const _glsl_version = 150
     GLFW.WindowHint(GLFW.CONTEXT_VERSION_MAJOR, 3)
     GLFW.WindowHint(GLFW.CONTEXT_VERSION_MINOR, 2)
     GLFW.WindowHint(GLFW.OPENGL_PROFILE, GLFW.OPENGL_CORE_PROFILE) # 3.2+ only
     GLFW.WindowHint(GLFW.OPENGL_FORWARD_COMPAT, GL_TRUE) # required on Mac
 else
     # OpenGL 3.0 + GLSL 130
-    const glsl_version = 130
+    const _glsl_version = 130
     GLFW.WindowHint(GLFW.CONTEXT_VERSION_MAJOR, 3)
     GLFW.WindowHint(GLFW.CONTEXT_VERSION_MINOR, 0)
 end
-
 # setup GLFW error callback
 error_callback(err::GLFW.GLFWError) = @error "GLFW ERROR: code $(err.code) msg: $(err.description)"
 GLFW.SetErrorCallback(error_callback)
+##== init GLFW end ==##
 
+_width, _hight, _wd_name = (1280, 720, "Demo")
+# StyleColorsDark
+##== init window & context ==##
 # create window
-window = GLFW.CreateWindow(1280, 720, "Demo")
-@assert window != C_NULL
-GLFW.MakeContextCurrent(window)
+_window_1 = GLFW.CreateWindow(_width, _hight, _wd_name)
+@assert _window_1 != C_NULL
+GLFW.MakeContextCurrent(_window_1)
 GLFW.SwapInterval(1)  # enable vsync
-## GLFW_init head -----------
-
-# setup Dear ImGui context
-ctx = CImGui.CreateContext()
-
+_ctx_1 = CImGui.CreateContext() # setup Dear ImGui context
+CImGui.StyleColorsDark() # setup Dear ImGui style
 # setup Platform/Renderer bindings
-ImGui_ImplGlfw_InitForOpenGL(window, true)
-ImGui_ImplOpenGL3_Init(glsl_version)
-## all init end
+ImGui_ImplGlfw_InitForOpenGL(_window_1, true)
+ImGui_ImplOpenGL3_Init(_glsl_version)
+##== init window & context end ==##
 
-# user's code
 
-# setup Dear ImGui style
-CImGui.StyleColorsDark()
-
-rule_list = getAllRules()
-
-while !GLFW.WindowShouldClose(window) ## Main Cycle
+_clear_color = Cfloat[0.45, 0.55, 0.60, 1.00]
+rule_list = getAllRules() # user's code
+while !GLFW.WindowShouldClose(_window_1) ## Main Cycle
+    GLFW.MakeContextCurrent(_window_1)
+    CImGui.SetCurrentContext(_ctx_1)
     GLFW.PollEvents()
     # start the Dear ImGui frame
     ImGui_ImplOpenGL3_NewFrame()
     ImGui_ImplGlfw_NewFrame()
     CImGui.NewFrame()
     ## new frame begin
+
 
     #= Add widgets ---------------------------------------------------------- =#
     CImGui.SetNextWindowSize((350, 560), CImGui.ImGuiCond_FirstUseEver)
@@ -138,20 +136,21 @@ while !GLFW.WindowShouldClose(window) ## Main Cycle
 
     CImGui.End() #= widgets end ---------------------------------------------=#
 
-    # rendering
+
+    ## rendering
     CImGui.Render()
-    GLFW.MakeContextCurrent(window)
-    display_w, display_h = GLFW.GetFramebufferSize(window)
-    glViewport(0, 0, display_w, display_h)
+    GLFW.MakeContextCurrent(_window_1)
+    _display_w, _display_h = GLFW.GetFramebufferSize(_window_1)
+    glViewport(0, 0, _display_w, _display_h)
+    glClearColor(_clear_color...)
     glClear(GL_COLOR_BUFFER_BIT)
     ImGui_ImplOpenGL3_RenderDrawData(CImGui.GetDrawData())
-
-    GLFW.MakeContextCurrent(window)
-    GLFW.SwapBuffers(window)
+    GLFW.MakeContextCurrent(_window_1)
+    GLFW.SwapBuffers(_window_1)
 end
 
-# cleanup
+## cleanup
 ImGui_ImplOpenGL3_Shutdown()
 ImGui_ImplGlfw_Shutdown()
-CImGui.DestroyContext(ctx)
-GLFW.DestroyWindow(window) # # GLFW_init tail
+CImGui.DestroyContext(_ctx_1)
+GLFW.DestroyWindow(_window_1) # # GLFW_init tail

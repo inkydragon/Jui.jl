@@ -34,6 +34,7 @@ GLFW.SetErrorCallback(error_callback)
 # 对每个 window 
 # 需要的参数: 
 #   + (宽 _width, 高 _hight, 名称 _wd_name)
+#   + 窗体颜色风格 (StyleColorsDark, ...)
 # 导出的变量:
 #   + window_N: 窗体句柄
 #   + ctx_N: 窗体上下文
@@ -83,6 +84,7 @@ while window1_open || window2_open
     GLFW.WindowShouldClose(window2) && (window2_open = false;)
     
     if window1_open
+        ## reset current context
         GLFW.MakeContextCurrent(window1)
         CImGui.SetCurrentContext(ctx1)
         GLFW.PollEvents()

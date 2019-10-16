@@ -8,8 +8,8 @@ CImGui = "5d785b6c-b76f-510e-a07c-3070796c7e87"
 MLStyle = "d8e11817-5142-5d16-987a-aa16d5891078"
 
 [compat]
+CImGui = "1.73"
 julia = "^1"
-CImGui = "1.72"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"

@@ -112,10 +112,7 @@ while !GLFW.WindowShouldClose(_window_1) ## Main Cycle
 
         # L System
         steps = genStep(RULES[listbox_item_current+1], param)
-
-        CImGui.SetCursorScreenPos(backupPos)
-        CImGui.BeginChild(currentChild+=1)
-        draw_list = CImGui.GetWindowDrawList()
+        
         for ((sx, sy), (ex, ey)) in steps
             CImGui.AddLine(draw_list,
                 ImVec2(sx, sy),
@@ -123,15 +120,7 @@ while !GLFW.WindowShouldClose(_window_1) ## Main Cycle
                 col32,
                 th
             );
-            if unsafe_load(draw_list)._VtxCurrentIdx > (2^16-2^10)
-                CImGui.EndChild()
-
-                CImGui.SetCursorScreenPos(backupPos)
-                CImGui.BeginChild(currentChild+=1)
-                draw_list = CImGui.GetWindowDrawList()
-            end
         end
-        CImGui.EndChild()
     end
 
     CImGui.End() #= widgets end ---------------------------------------------=#
